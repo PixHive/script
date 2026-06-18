@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Avoid systemctl entering less/pager and looking "stuck".
+export SYSTEMD_PAGER=cat
+export PAGER=cat
+
 SERVICE_NAME="${1:-komari-agent}"
 RUN_USER="komari"
 RUN_GROUP="komari"
@@ -17,12 +21,12 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "==> 1. 检查 systemd 服务"
-if ! systemctl cat "${SERVICE_NAME}.service" >/dev/null 2>&1; then
+if ! systemctl cat "${SERVICE_NAME}.service" --no-pager >/dev/null 2>&1; then
   echo "错误：没有找到 ${SERVICE_NAME}.service"
   echo
   echo "请先确认 Komari Agent 是否已经安装成功："
   echo "  systemctl list-unit-files | grep -i komari"
-  echo "  systemctl status komari-agent"
+  echo "  systemctl status komari-agent --no-pager"
   echo "  ls -l /etc/systemd/system/komari-agent.service"
   echo "  ls -l /opt/komari/agent"
   exit 1
@@ -146,7 +150,7 @@ systemctl --no-pager --full status "${SERVICE_NAME}.service" || true
 
 echo
 echo "==> 10. 检查实际启动参数"
-systemctl cat "${SERVICE_NAME}.service"
+systemctl cat "${SERVICE_NAME}.service" --no-pager || true
 echo
 ps -eo user,pid,cmd | grep -i komari | grep -v grep || true
 
